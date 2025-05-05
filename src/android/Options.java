@@ -922,17 +922,31 @@ public final class Options {
 
     /**
      * Converts a version string to an int.
-     * @param version
-     * @return
+     * @param version the version string, e.g. "1.2.3" or "1.0-beta"
+     * @return the numeric version code, where major*10000 + minor*100 + patch
      */
     public static int versionStringToInt(String version) {
-        // Split the version string by '.' and '-'
-        // example 1.1.1-dev would converted to 10101
         String[] parts = version.split("[.\\-]");
+        int major = parsePart(parts, 0);
+        int minor = parsePart(parts, 1);
+        int patch = parsePart(parts, 2);
+        return major * 10000 + minor * 100 + patch;
+    }
 
-        // Version calculation taken from
-        // https://cordova.apache.org/docs/en/12.x-2025.01/guide/platforms/android/index.html#setting-the-version-code
-        return Integer.parseInt(parts[0]) * 10000 + Integer.parseInt(parts[1]) * 100 + Integer.parseInt(parts[2]);
+    private static int parsePart(String[] parts, int index) {
+        if (index < parts.length) {
+            String p = parts[index];
+            if (p.matches("\\d+")) {
+                try {
+                    return Integer.parseInt(p);
+                } catch (NumberFormatException e) {
+                    Log.w("Options", "Invalid numeric part in version: " + p);
+                }
+            } else {
+                Log.w("Options", "Non-numeric version segment: " + p);
+            }
+        }
+        return 0;
     }
 
     /**
@@ -944,7 +958,10 @@ public final class Options {
      * version1 is newer than version2.
      */
     public static int compareVersion(String version1, String version2) {
-        return Integer.compare(versionStringToInt(version1), versionStringToInt(version2));
+        return Integer.compare(
+            versionStringToInt(version1),
+            versionStringToInt(version2)
+        );
     }
 
     /**
